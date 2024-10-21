@@ -11,8 +11,6 @@ DDRA = $8003
 
 CMD_LOC = $0
 
-MAX_CMD_SIZE = $A
-
 .org $8040 ; ROM has an offset of 8040
 
 init:
@@ -38,7 +36,6 @@ read_char:
     sta CMD_LOC,x ;Store to the CMD_LOC
     cmp #127 ;Backspace
     beq BS_Handle
-    inx
     cmp #13 ;carriage return
     bne send_char
 ;Run only if '\r' entered
@@ -51,6 +48,9 @@ read_char:
 
 send_char:
     ;send
+    cpx #10 ;Limit cmd size to 10
+    beq read_char
+    inx
     sta UART_DATA
     jsr sleep
     jmp read_char
@@ -60,7 +60,9 @@ BS_Handle: ;decrement x and send backspace
   beq read_char
   dex
   lda #127 ;Backspace
-  jmp send_char
+  sta UART_DATA
+  jsr sleep
+  jmp read_char
 
 ;print the new line sequence
 new_line:
