@@ -13,7 +13,7 @@ CMD_LOC = $0
 
 MAX_CMD_SIZE = $A
 
-.org $8040 ; ROM has an offset of 8024
+.org $8040 ; ROM has an offset of 8040
 
 init:
     lda #0
@@ -36,10 +36,12 @@ read_char:
     beq read_char ;if empty, try again
     lda UART_DATA
     sta CMD_LOC,x ;Store to the CMD_LOC
+    cmp #127 ;Backspace
+    beq BS_Handle
     inx
-    cmp #13
+    cmp #13 ;carriage return
     bne send_char
-;Run only if '\r' enterd
+;Run only if '\r' entered
     sta UART_DATA
     jsr sleep
     lda #$a ;newline
@@ -52,6 +54,13 @@ send_char:
     sta UART_DATA
     jsr sleep
     jmp read_char
+
+BS_Handle: ;decrement x and send backspace
+  cpx #0 ;Make sure we don't subtract beyond zero or send a backspace when already at 0
+  beq read_char
+  dex
+  lda #127 ;Backspace
+  jmp send_char
 
 ;print the new line sequence
 new_line:
